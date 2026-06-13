@@ -187,9 +187,7 @@ bool Gate::spawnPair(Map &map, const Snake & /*snake*/)
             }
             if (ok)
             {
-                Position p;
-                p.y = y;
-                p.x = x;
+                const Position p = {y, x};
                 cands.push_back(p);
             }
         }
@@ -199,7 +197,7 @@ bool Gate::spawnPair(Map &map, const Snake & /*snake*/)
         return false;
 
     // 두 자리 무작위 선택. 같으면 다시 뽑기 - 최대 50회
-    int i1 = rand() % (int)cands.size();
+    const int i1 = rand() % (int)cands.size();
     int i2 = rand() % (int)cands.size();
     int tries = 0;
     while (i1 == i2 && tries < 50)

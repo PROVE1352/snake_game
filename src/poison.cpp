@@ -27,7 +27,7 @@ void Poison::spawn(Map &map)
         {
             if (map.getCell(cy, cx) == EMPTY)
             {
-                Position p = {cy, cx};
+                const Position p = {cy, cx};
                 empties.push_back(p);
             }
         }

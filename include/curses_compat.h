@@ -10,13 +10,13 @@
     #include <pdcurses.h>   // curses.h -> pdcurses.h로 변경(윈도우 환경 실행오류 해결)
     #include <windows.h>
     // PDCurses 환경에서는 usleep이 없으므로 Sleep(밀리초)으로 매핑
-    inline void sleep_usec(int usec) {
+    inline void sleep_usec(const int usec) {
         Sleep(usec / 1000);
     }
 #else
     #include <ncurses.h>    // macOS / Linux
     #include <unistd.h>
-    inline void sleep_usec(int usec) {
+    inline void sleep_usec(const int usec) {
         usleep(usec);
     }
 #endif
