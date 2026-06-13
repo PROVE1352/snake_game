@@ -11,6 +11,7 @@ Snake::Snake()
     length = 0;
     dir = DIR_RIGHT;
     nextDir = DIR_RIGHT;
+    dirQueue = std::queue<Direction>();
     for (int i = 0; i < SNAKE_MAX_LENGTH; i++)
     {
         body[i].y = 0;
@@ -161,6 +162,7 @@ bool Snake::initFromMap(const Map &map)
             dir = DIR_RIGHT;
     }
     nextDir = dir;
+    dirQueue = std::queue<Direction>();
     return true;
 }
 
@@ -181,18 +183,38 @@ bool Snake::isOpposite(const Direction a, const Direction b) const
 // 사용자가 방향키를 누르면 호출됨
 void Snake::requestDirection(const Direction d)
 {
-    // 현재 방향과 같은 키는 무시 (명세서: 진행방향과 같은 입력 무시)
-    if (d == dir)
+    // 큐의 마지막 원소(큐가 비어있다면 현재 dir)를 기준으로 같은 방향이면 무시
+    const Direction referenceDir = dirQueue.empty() ? dir : dirQueue.back();
+    if (d == referenceDir)
     {
         return;
     }
-    // 반대방향이라도 일단 받아둠 -> move() 안에서 게임오버로 처리
-    nextDir = d;
+
+    // 큐 크기 제한: 최대 2개로 제한
+    // 큐가 가득 찼다면(크기 2) 가장 최근에 등록하려던(큐의 마지막 원소) 방향을 덮어씀
+    if (dirQueue.size() >= 2)
+    {
+        dirQueue.back() = d;
+    }
+    else
+    {
+        dirQueue.push(d);
+    }
 }
 
 // 뱀을 한 칸 움직임
 int Snake::move(Map &map, Gate *const gate)
 {
+    if (!dirQueue.empty())
+    {
+        nextDir = dirQueue.front();
+        dirQueue.pop();
+    }
+    else
+    {
+        nextDir = dir;
+    }
+
     // 반대 방향 입력이면 게임 오버 (명세서: 반대 방향키 입력 시 실패)
     if (isOpposite(dir, nextDir) == true)
     {

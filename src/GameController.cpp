@@ -86,6 +86,7 @@ bool GameController::initialize()
 // 단일 스테이지 게임 실행 흐름 관리
 GameResult GameController::run()
 {
+    flushinp(); // 이전 화면에서 입력된 불필요한 키 입력 버퍼 비우기
     while (isRunning && !gameOver && !stageClear)
     {
         render();              // 1. 화면 렌더링
@@ -114,8 +115,8 @@ void GameController::waitAndProcessInput()
 
     while (elapsed < waitTime)
     {
-        const int key = getch();
-        if (key != ERR)
+        int key;
+        while ((key = getch()) != ERR)
         {
             if (key == 'q' || key == 'Q')
             {
@@ -131,6 +132,10 @@ void GameController::waitAndProcessInput()
                 snake.requestDirection(DIR_LEFT);
             else if (key == KEY_RIGHT)
                 snake.requestDirection(DIR_RIGHT);
+        }
+        if (userQuit)
+        {
+            break;
         }
         sleep_usec(pollInterval);
         elapsed += pollInterval;

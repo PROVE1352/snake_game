@@ -5,6 +5,7 @@
 #define SNAKE_H
 
 #include "common.h"
+#include <queue>
 
 class Map;  // 전방 선언
 class Gate; // 전방 선언
@@ -32,6 +33,7 @@ private:
     int length;
     Direction dir;     // 현재 진행 방향
     Direction nextDir; // 다음 tick 에 적용할 방향 (사용자가 키 누른 결과)
+    std::queue<Direction> dirQueue; // 키 입력을 순차적으로 처리하기 위한 큐
 
     // a 와 b 가 서로 정반대 방향이면 true
     bool isOpposite(const Direction a, const Direction b) const;
