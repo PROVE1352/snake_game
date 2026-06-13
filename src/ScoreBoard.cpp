@@ -1,23 +1,24 @@
 // ScoreBoard.cpp
-// 5단계 - 스코어보드 구현부
-
+// ScoreBoard 클래스의 구현 파일.
+//   - 현재 스테이지의 점수(길이, 획득한 성장/독약/스피드 아이템 수, 게이트 통과 수)를 관리
+//   - 난이도(스테이지 단계)에 비례하여 클리어해야 할 미션 목표치를 랜덤 가중치와 함께 생성
+//   - 점수판 및 미션 현황판을 화면에 표시
 #include "ScoreBoard.h"
 #include "curses_compat.h"
 #include <cstdlib>
 #include <locale.h>
+#include <algorithm>
 
-ScoreBoard::ScoreBoard(int stageNum, int totalInternalWalls)
+// 생성자: 각 카운터 변수를 초기화하고, 스테이지에 맞는 미션을 동적 생성
+ScoreBoard::ScoreBoard(const int stageNum, const int totalInternalWalls)
 {
     stage = stageNum;
-
     currentLength = 0;
     maxLength = 0;
     growthCount = 0;
     poisonCount = 0;
     speedCount = 0;
     gateCount = 0;
-
-    // 5단계 - 현재 내부 벽 개수 초기화 추가
     currentInternalWalls = totalInternalWalls;
 
     missionLength = false;
@@ -26,31 +27,24 @@ ScoreBoard::ScoreBoard(int stageNum, int totalInternalWalls)
     missionSpeed = false;
     missionGate = false;
 
-    // 5단계 - 스테이지 초기화 시 미션 자동 생성
-    generateMissions(totalInternalWalls);
+    generateMissions();
 }
 
-void ScoreBoard::generateMissions(int totalInternalWalls)
+// 스테이지 단계 및 내부 벽 개수를 기반으로 실시간 점수 목표치를 계산함
+void ScoreBoard::generateMissions()
 {
-    // 5단계 - 스테이지가 높아질수록 목표치가 커지도록 설정
-    int base = stage * 2;
-
-    targetLength = base + (rand() % 3) + 3;        // 5단계 - 스테이지 1: 5~7, 스테이지 4: 11~13
-    targetGrowth = base + (rand() % 3);            // 5단계 - 스테이지 1: 2~4, 스테이지 4: 8~10
-    targetPoison = (stage / 2) + (rand() % 2) + 1; // 5단계 - 독 아이템 목표
-    targetSpeed = base / 2 + (rand() % 2) + 1;     // 5단계 - 스피드 아이템 목표
-
-    // 5단계 - Gate 미션: 통과한 게이트의 개수를 미션으로 사용하되 전체 벽의 30% 이하로 난이도 조절
-    int maxGate = totalInternalWalls * 0.3;
-    if (maxGate < 1)
-        maxGate = 1; // 최소 1번은 통과해야 함
-
-    int passes = (rand() % maxGate) + 1;
-    // 너무 많아지지 않도록 스테이지 보정 (스테이지당 1~2회 추가 목표)
-    if (passes > stage + 1)
-        passes = stage + 1;
-
-    targetGate = passes;
+    // 스테이지가 높아질수록 목표치가 커지도록 설정 - 난이도 조정!!
+    const int base = stage * 2;
+    // 목표 길이 범위 - S1:[5~7], S2:[7~9], S3:[9~11], S4:[11~13], S5:[13~15]
+    targetLength = base + (rand() % 3) + 3;
+    // 목표 성장 아이템 개수 범위 - S1:[2~4], S2:[4~6], S3:[6~8], S4:[8~10], S5:[10~12]
+    targetGrowth = base + (rand() % 3);
+    // 목표 독약 획득 횟수 범위 - S1:[1~3], S2:[2~4], S3:[2~4], S4:[3~5], S5:[3~5]
+    targetPoison = (stage / 2) + (rand() % 3) + 1;
+    // 목표 스피드 아이템 개수 범위 - S1:[2~4], S2:[3~5], S3:[4~6], S4:[5~7], S5:[6~8]
+    targetSpeed = stage + (rand() % 3) + 1;
+    // 목표 게이트 통과 횟수 범위 - S1:[1~2], S2:[2~3], S3:[3~4], S4:[4~5], S5:[5~6]
+    targetGate = stage + (rand() % 2);
 }
 
 void ScoreBoard::addGrowth()
@@ -71,119 +65,123 @@ void ScoreBoard::addSpeed()
     checkMissions();
 }
 
-// 5단계 - 게이트 통과 횟수 증가
 void ScoreBoard::addGate()
 {
     gateCount++;
     checkMissions();
 }
 
-// 5단계 - 게이트 미션이 달성 가능한지 판단하는 로직
-bool ScoreBoard::canCompleteGateMission(bool isGateActive) const
+// 현재 내부 벽 개수를 바탕으로 남은 틱 동안 게이트 미션 달성이 물리적으로 가능한지 평가함
+bool ScoreBoard::canCompleteGateMission(const bool isGateActive) const
 {
     if (missionGate)
-        return true; // 이미 달성했으면 OK
+    {
+        return true;
+    }
 
-    // 5단계 - 앞으로 생성 가능한 게이트 쌍의 수 = (남은 벽 / 2) + (현재 떠있는 게이트 ? 1 : 0)
-    int potentialGates = (currentInternalWalls / 2) + (isGateActive ? 1 : 0);
-    int needed = targetGate - gateCount;
-
+    // 맵 상에 한 번에 존재할 수 있는 게이트 수와 필요한 잔여 통과 횟수를 비교
+    const int potentialGates = (currentInternalWalls / 2) + (isGateActive ? 1 : 0);
+    const int needed = targetGate - gateCount;
     return potentialGates >= needed;
 }
 
-void ScoreBoard::updateLength(int len)
+// 뱀의 현재 길이를 설정하고, 스테이지 최장 기록을 저장한 후 미션을 판정함
+void ScoreBoard::updateLength(const int len)
 {
     currentLength = len;
     if (currentLength > maxLength)
+    {
         maxLength = currentLength;
+    }
     checkMissions();
 }
 
+// 획득 점수와 목표치를 실시간 대조하여 각 미션의 달성 여부(참/거짓)를 판정함
 void ScoreBoard::checkMissions()
 {
-    // 5단계 - 매번 현재 값으로 재평가한다(양방향)
-    // 길이(Length)는 Poison 등으로 줄어들 수 있으므로, 목표 미달이면
-    // 달성 표시도 해제되어야 한다. 
-    // Growth/Poison/Speed/Gate 는 누적값이라 줄지 않으므로 사실상 한 번 달성하면 유지
     missionLength = (currentLength >= targetLength);
     missionGrowth = (growthCount >= targetGrowth);
     missionPoison = (poisonCount >= targetPoison);
-    missionSpeed  = (speedCount >= targetSpeed);
-    missionGate   = (gateCount >= targetGate);
+    missionSpeed = (speedCount >= targetSpeed);
+    missionGate = (gateCount >= targetGate);
 }
 
+// 5개 모든 미션 조건이 완료 상태를 만족하는지 판정함
 bool ScoreBoard::isAllMissionComplete() const
 {
     return missionLength && missionGrowth && missionPoison && missionSpeed && missionGate;
 }
 
-void ScoreBoard::draw(int offsetY, int offsetX) const
+// 스코어보드, 미션 현황, 간단한 설명 창을 화면에 출력
+void ScoreBoard::draw(const int offsetY, const int offsetX) const
 {
-    // Draw Box for Score Board
-    // Header (No emojis)
+    // 1. STAGE SCOREBOARD 타이틀
     attron(A_BOLD | COLOR_PAIR(COLOR_PAIR_TEXT_SPEED));
     mvprintw(offsetY, offsetX, "╔══════════════════════════╗");
     mvprintw(offsetY + 1, offsetX, "║    STAGE %d SCOREBOARD    ║", stage);
     mvprintw(offsetY + 2, offsetX, "╠══════════════════════════╣");
     attroff(A_BOLD | COLOR_PAIR(COLOR_PAIR_TEXT_SPEED));
 
-    // Stats
     mvprintw(offsetY + 3, offsetX, "║  Length  : %2d / %-2d       ║", currentLength, maxLength);
 
-    // Growth (Green Box)
     mvprintw(offsetY + 4, offsetX, "║  ");
     attron(COLOR_PAIR(GROWTH_ITEM));
     mvprintw(offsetY + 4, offsetX + 3, "  ");
     attroff(COLOR_PAIR(GROWTH_ITEM));
     mvprintw(offsetY + 4, offsetX + 5, " Growth : %-2d          ║", growthCount);
 
-    // Poison (Red Box)
     mvprintw(offsetY + 5, offsetX, "║  ");
     attron(COLOR_PAIR(POISON_ITEM));
     mvprintw(offsetY + 5, offsetX + 3, "  ");
     attroff(COLOR_PAIR(POISON_ITEM));
     mvprintw(offsetY + 5, offsetX + 5, " Poison : %-2d          ║", poisonCount);
 
-    // Speed (Cyan Box)
     mvprintw(offsetY + 6, offsetX, "║  ");
     attron(COLOR_PAIR(SPEED_ITEM));
     mvprintw(offsetY + 6, offsetX + 3, "  ");
     attroff(COLOR_PAIR(SPEED_ITEM));
     mvprintw(offsetY + 6, offsetX + 5, " Speed  : %-2d          ║", speedCount);
 
-    // Gate (Magenta Box)
     mvprintw(offsetY + 7, offsetX, "║  ");
     attron(COLOR_PAIR(GATE));
     mvprintw(offsetY + 7, offsetX + 3, "  ");
     attroff(COLOR_PAIR(GATE));
     mvprintw(offsetY + 7, offsetX + 5, " Gate   : %-2d (Max:%2d) ║", gateCount, currentInternalWalls / 2);
-    
+
     mvprintw(offsetY + 8, offsetX, "╚══════════════════════════╝");
 
-    // Draw Box for Missions
-    int mOffset = offsetY + 10;
+    // 2. MISSIONS 현황
+    const int mOffset = offsetY + 10;
     attron(A_BOLD | COLOR_PAIR(COLOR_PAIR_TEXT_USED_GATE));
     mvprintw(mOffset, offsetX, "╔══════════════════════════╗");
     mvprintw(mOffset + 1, offsetX, "║         MISSIONS         ║");
     mvprintw(mOffset + 2, offsetX, "╠══════════════════════════╣");
     attroff(A_BOLD | COLOR_PAIR(COLOR_PAIR_TEXT_USED_GATE));
 
-    auto printMissionRow = [&](int row, int cellType, const char* labelStr, int current, int target, bool complete) {
+    // 미션 항목 한 행을 출력하는 람다 헬퍼 함수
+    auto printMissionRow = [&](const int row, const int cellType, const char *const labelStr, const int current, const int target, const bool complete)
+    {
         mvprintw(mOffset + row, offsetX, "║  ");
-        if (cellType > 0) {
+        if (cellType > 0)
+        {
             attron(COLOR_PAIR(cellType));
             mvprintw(mOffset + row, offsetX + 3, "  ");
             attroff(COLOR_PAIR(cellType));
             mvprintw(mOffset + row, offsetX + 5, " %s : %2d / %-2d", labelStr, current, target);
-        } else {
+        }
+        else
+        {
             mvprintw(mOffset + row, offsetX + 3, "Length : %2d / %-2d   ", current, target);
         }
 
-        if (complete) {
+        if (complete)
+        {
             attron(COLOR_PAIR(COLOR_PAIR_TEXT_GROWTH) | A_BOLD);
             mvprintw(mOffset + row, offsetX + 23, "[V]");
             attroff(COLOR_PAIR(COLOR_PAIR_TEXT_GROWTH) | A_BOLD);
-        } else {
+        }
+        else
+        {
             attron(COLOR_PAIR(COLOR_PAIR_TEXT_POISON));
             mvprintw(mOffset + row, offsetX + 23, "[ ]");
             attroff(COLOR_PAIR(COLOR_PAIR_TEXT_POISON));
@@ -198,8 +196,8 @@ void ScoreBoard::draw(int offsetY, int offsetX) const
     printMissionRow(7, GATE, "Gate  ", gateCount, targetGate, missionGate);
     mvprintw(mOffset + 8, offsetX, "╚══════════════════════════╝");
 
-    // Draw Box for Controls/Help
-    int hOffset = mOffset + 10;
+    // 3. 조작법 도움말 설명 출력
+    const int hOffset = mOffset + 10;
     attron(A_DIM);
     mvprintw(hOffset, offsetX, "╔══════════════════════════╗");
     mvprintw(hOffset + 1, offsetX, "║      조작법 및 정보      ║");

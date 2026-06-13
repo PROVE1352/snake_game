@@ -13,30 +13,31 @@
 class Map;
 class Snake;
 
-class BlockWall {
+class BlockWall
+{
 public:
     BlockWall();
 
     // 매 tick 호출.
     // 예고 -> 출현 -> 소멸 -> 재출현 흐름을 관리
-    void update(Map& map, const Snake& snake);
+    void update(Map &map, const Snake &snake);
 
 private:
     static const int MAX_CELLS = 5;
 
-    int phase;      // 0 = 대기, 1 = 예고 중, 2 = 벽 출현 중
-    int timer;      // 현재 phase 가 끝나기까지 남은 tick
+    int phase; // 0 = 대기, 1 = 예고 중, 2 = 벽 출현 중
+    int timer; // 현재 phase 가 끝나기까지 남은 tick
     Position cells[MAX_CELLS];
     int cellCount;
 
     // 무작위 도형/위치를 골라 예고(BLOCK_WARN) 로 표시. 성공 시 true
-    bool trySpawnWarn(Map& map, const Snake& snake);
+    bool trySpawnWarn(Map &map, const Snake &snake);
 
     // 예고 칸(BLOCK_WARN)을 실제 벽(BLOCK_WALL)으로 굳힘
-    void hardenToWall(Map& map);
+    void hardenToWall(Map &map);
 
     // 블록 칸을 맵에서 지움 (지정한 셀 값인 칸만 EMPTY 로)
-    void clearCells(Map& map, int onlyIfCell);
+    void clearCells(Map &map, int onlyIfCell);
 };
 
 #endif

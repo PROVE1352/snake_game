@@ -1,5 +1,8 @@
 // RankingManager.cpp
 // RankingManager 구현 - 랭킹 파일 로드/저장, 정렬, 스테이지별 조회
+//   - 플레이어가 달성한 스코어 기록을 파일(scoreboard/rankings.txt)에 '|'를 저장/불러오기
+//   - 기록은 [최장길이 -> 도달단계 -> Growth -> Poison -> Speed -> Gate -> 최신 등록 타임스탬프] 우선순위 순으로 정렬함
+//   - 상위 10개 레코드를 반환하며, 방금 진행된 게임 기록이 10위권 밖이더라도 결과 비교를 위해 마지막 리스트 행에 특별 추가 표기함
 
 #include "RankingManager.h"
 #include <fstream>
@@ -7,10 +10,11 @@
 #include <algorithm>
 #include <ctime>
 
-// 현재 시간을 YYYY-MM-DD HH:MM:SS 형태로 포맷팅해서 가져오는 헬퍼 함수
-static std::string getCurrentTimestamp() {
-    std::time_t now = std::time(nullptr);
-    std::tm* localTm = std::localtime(&now);
+// 현재 시간을 YYYY-MM-DD HH:MM:SS 형태로 포맷팅해서 가져옴
+static std::string getCurrentTimestamp()
+{
+    const std::time_t now = std::time(nullptr);
+    const std::tm *const localTm = std::localtime(&now);
     char buf[64];
     std::strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", localTm);
     return std::string(buf);
@@ -19,28 +23,35 @@ static std::string getCurrentTimestamp() {
 // 생성자 - 빈 랭킹으로 시작한다. 기존 기록은 loadFromFile 로 불러옴
 RankingManager::RankingManager() {}
 
-// 파일에서 랭킹을 읽어온다.
+// 파일에서 랭킹을 불러옴
 //   각 줄은 '|' 로 구분된 필드 (시간|스테이지|최대길이|growth|poison|speed|gate).
 //   파일이 없으면 조용히 빈 상태로 둠
-void RankingManager::loadFromFile(const std::string& filepath) {
+void RankingManager::loadFromFile(const std::string &filepath)
+{
     records.clear();
     std::ifstream fin(filepath);
-    if (!fin.is_open()) return;
+    if (!fin.is_open())
+        return; // 파일이 존재하지 않는 최초 실행의 경우 등 스킵
 
     std::string line;
-    while (std::getline(fin, line)) {
-        if (line.empty()) continue;
+    // 한 줄씩 파이프(|) 문자를 토큰으로 읽어 들임
+    while (std::getline(fin, line))
+    {
+        if (line.empty())
+            continue;
+
         std::stringstream ss(line);
         std::string ts, stageStr, maxLenStr, growthStr, poisonStr, speedStr, gateStr;
-        
+
         if (std::getline(ss, ts, '|') &&
             std::getline(ss, stageStr, '|') &&
             std::getline(ss, maxLenStr, '|') &&
             std::getline(ss, growthStr, '|') &&
             std::getline(ss, poisonStr, '|') &&
             std::getline(ss, speedStr, '|') &&
-            std::getline(ss, gateStr, '|')) {
-            
+            std::getline(ss, gateStr, '|'))
+        {
+
             RankingRecord r;
             r.timestamp = ts;
             r.stage = std::stoi(stageStr);
@@ -57,11 +68,14 @@ void RankingManager::loadFromFile(const std::string& filepath) {
 }
 
 // 현재 랭킹 기록 전체를 파일에 '|' 구분 형식으로 저장
-void RankingManager::saveToFile(const std::string& filepath) {
+void RankingManager::saveToFile(const std::string &filepath)
+{
     std::ofstream fout(filepath);
-    if (!fout.is_open()) return;
+    if (!fout.is_open())
+        return;
 
-    for (const auto& r : records) {
+    for (const auto &r : records)
+    {
         fout << r.timestamp << "|"
              << r.stage << "|"
              << r.maxLength << "|"
@@ -72,8 +86,9 @@ void RankingManager::saveToFile(const std::string& filepath) {
     }
 }
 
-// 새 플레이 결과를 기록으로 추가 timestamp 는 현재 시각으로 자동 생성
-void RankingManager::addRecord(int stage, int maxLength, int growth, int poison, int speed, int gate) {
+// 새로운 점수 레코드를 작성하여 내부 배열(records)에 추가함
+void RankingManager::addRecord(const int stage, const int maxLength, const int growth, const int poison, const int speed, const int gate)
+{
     RankingRecord r;
     r.timestamp = getCurrentTimestamp();
     r.stage = stage;
@@ -87,65 +102,79 @@ void RankingManager::addRecord(int stage, int maxLength, int growth, int poison,
     records.push_back(r);
 }
 
-// 스테이지별(0=통합) 랭킹을 반환
-// 최대 길이 내림차순으로 정렬
-// 동점 시 stage -> growth -> poison -> speed -> gate -> 시간 순)하고 상위 10등을 추가하고 방금 플레이한 기록이 10등 밖이면 끝에 한 줄 덧붙임
-std::vector<RankingRecord> RankingManager::getRankings(int stageFilter) const {
-    // 조건에 맞는 레코드 필터링
+// 지정된 스테이지 필터에 부합하는 레코드만 골라 정렬을 하고 등수를 부여하여 상위 10등 리스트를 반환함
+// 방금 플레이한 기록이 10등 밖이면 끝에 한 줄 덧붙임
+std::vector<RankingRecord> RankingManager::getRankings(const int stageFilter) const
+{
     std::vector<RankingRecord> filtered;
-    for (const auto& r : records) {
-        if (stageFilter == 0 || r.stage == stageFilter) {
+    for (const auto &r : records)
+    {
+        if (stageFilter == 0 || r.stage == stageFilter)
+        {
             filtered.push_back(r);
         }
     }
 
     // 최대 길이 내림차순 정렬
     // 동일한 최대 길이일때: 더 높은 단계 -> growth -> poison -> speed -> gate통과가 많은 순서로 정렬
-    std::sort(filtered.begin(), filtered.end(), [](const RankingRecord& a, const RankingRecord& b) {
-        if (a.maxLength != b.maxLength) {
-            return a.maxLength > b.maxLength;
-        }
-        if (a.stage != b.stage) {
-            return a.stage > b.stage;
-        }
-        if (a.growthCount != b.growthCount) {
-            return a.growthCount > b.growthCount;
-        }
-        if (a.poisonCount != b.poisonCount) {
-            return a.poisonCount > b.poisonCount;
-        }
-        if (a.speedCount != b.speedCount) {
-            return a.speedCount > b.speedCount;
-        }
-        if (a.gateCount != b.gateCount) {
-            return a.gateCount > b.gateCount;
-        }
-        return a.timestamp > b.timestamp;
-    });
+    std::sort(filtered.begin(), filtered.end(), [](const RankingRecord &a, const RankingRecord &b)
+              {
+                  if (a.maxLength != b.maxLength)
+                  {
+                      return a.maxLength > b.maxLength; // 1순위: 최장 길이 큰 순
+                  }
+                  if (a.stage != b.stage)
+                  {
+                      return a.stage > b.stage; // 2순위: 스테이지 높은 순
+                  }
+                  if (a.growthCount != b.growthCount)
+                  {
+                      return a.growthCount > b.growthCount; // 3순위: Growth 아이템 획득수
+                  }
+                  if (a.poisonCount != b.poisonCount)
+                  {
+                      return a.poisonCount > b.poisonCount; // 4순위: Poison 아이템 획득수
+                  }
+                  if (a.speedCount != b.speedCount)
+                  {
+                      return a.speedCount > b.speedCount; // 5순위: Speed 아이템 획득수
+                  }
+                  if (a.gateCount != b.gateCount)
+                  {
+                      return a.gateCount > b.gateCount; // 6순위: Gate 통과 횟수
+                  }
+                  return a.timestamp > b.timestamp; // 7순위: 최근 플레이된 시간순
+              });
 
-    // 필터링된 리스트의 모든 레코드에 1-based 순위 마킹
-    for (int i = 0; i < (int)filtered.size(); i++) {
+    // 랭킹 등수 번호 지정
+    for (int i = 0; i < (int)filtered.size(); i++)
+    {
         filtered[i].rank = i + 1;
     }
 
-    // 결과 리스트 구성 
+    // 결과 리스트 구성
     // 상위 10등까지 수집
     std::vector<RankingRecord> result;
-    int limit = std::min(10, (int)filtered.size());
-    for (int i = 0; i < limit; i++) {
+    const int limit = std::min(10, (int)filtered.size());
+    for (int i = 0; i < limit; i++)
+    {
         result.push_back(filtered[i]);
     }
 
-    // 만약 방금 플레이한 기록이 존재하는데 10위 안에 없으면 11번째 행으로 수동 추가
+    // 방금 종료된 본인의 성적이 몇 등인지 찾아봄
     int currentPlayIndex = -1;
-    for (int i = 0; i < (int)filtered.size(); i++) {
-        if (filtered[i].isCurrentPlay) {
+    for (int i = 0; i < (int)filtered.size(); i++)
+    {
+        if (filtered[i].isCurrentPlay)
+        {
             currentPlayIndex = i;
             break;
         }
     }
 
-    if (currentPlayIndex >= 10) {
+    // 등수가 10위 이하(10위 바깥)에 밀린 경우, 본인의 기록을 결과 창 마지막 줄에 하이라이트 표기하기 위해 맨 뒤에 덧붙임
+    if (currentPlayIndex >= 10)
+    {
         result.push_back(filtered[currentPlayIndex]);
     }
 
@@ -153,15 +182,19 @@ std::vector<RankingRecord> RankingManager::getRankings(int stageFilter) const {
 }
 
 // 가장 최근에 추가된 기록을 '이번 플레이'로 표시
-void RankingManager::markLatestAsCurrent() {
-    if (!records.empty()) {
+void RankingManager::markLatestAsCurrent()
+{
+    if (!records.empty())
+    {
         records.back().isCurrentPlay = true;
     }
 }
 
 // 모든 기록의 '이번 플레이' 표시를 해제
-void RankingManager::clearCurrentPlayFlag() {
-    for (auto& r : records) {
+void RankingManager::clearCurrentPlayFlag()
+{
+    for (auto &r : records)
+    {
         r.isCurrentPlay = false;
     }
 }

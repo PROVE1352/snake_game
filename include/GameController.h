@@ -14,50 +14,59 @@
 #include "Snake.h"
 #include "ScoreBoard.h"
 #include "Gate.h"
-#include "Item.h"
+#include "food.h"
+#include "poison.h"
+#include "speed_item.h"
 #include "BlockWall.h"
 #include "RankingManager.h"
 
-enum class GameResult {
+// 게임 결과 표현
+enum class GameResult
+{
     STAGE_CLEAR,
     GAME_OVER,
     QUIT
 };
 
-class GameController {
+// 단일 스테이지 실행 흐름과 UI 연출을 총괄하는 클래스
+class GameController
+{
 public:
-    GameController(int stageNum, const std::string& mapFilePath);
+    // 생성자: 실행할 스테이지 번호와 해당 스테이지의 맵 파일 경로를 주입받음
+    GameController(const int stageNum, const std::string &mapFilePath);
     ~GameController() = default;
 
-    // 초기화: 맵 로드, 뱀 생성, 스코어보드/아이템 생성
+    // 게임판을 로드하고 뱀의 초기 위치와 아이템, 게이트 설정 진행. 성공 시 true
     bool initialize();
 
-    // 단일 스테이지 실행 루프
+    // 스테이지 메인 업데이트 루프(waitAndProcessInput -> update -> render)를 구동함
     GameResult run();
 
-    // 인트로 화면 표시
-    static bool showIntroScreen(RankingManager& rankingManager);
+    // 인트로 화면 표시 (게임 시작 시 true, 종료 선택 시 false 반환)
+    static bool showIntroScreen(RankingManager &rankingManager);
 
     // 도움말/조작법 화면 표시
     static void showHelpScreen();
 
     // 랭킹 보드 화면 표시
-    // A 또는 Q 입력에 따라 true/false 반환
-    static bool showRankingBoardScreen(RankingManager& rankingManager, int initialStage, const std::string& bottomMessage, bool allowSwitch);
+    // 계속 진행 A 입력 시 true, 메인으로 복귀 Q 입력 시 false
+    static bool showRankingBoardScreen(RankingManager &rankingManager, const int initialStage, const std::string &bottomMessage, const bool allowSwitch);
 
     // 랭킹 테이블 그리기 헬퍼 함수
-    static void drawRankingTable(const std::vector<RankingRecord>& ranks, int stageFilter, const std::string& bottomMessage);
+    static void drawRankingTable(const std::vector<RankingRecord> &ranks, const int stageFilter, const std::string &bottomMessage);
 
-    // 스테이지 결과 스크린 출력
-    // 랭킹 보드 연동, A는 true, Q는 false 반환
-    bool showStageClearScreen(RankingManager& rankingManager) const;
-    bool showGameOverScreen(RankingManager& rankingManager) const;
-    
-    // 최종 성공 스크린 
-    // 모든 스테이지 통과, 랭킹 보드 연동, A는 true, Q는 false 반환
-    static bool showTotalClearScreen(RankingManager& rankingManager, int maxLength, int growth, int poison, int speed, int gate);
+    // 스테이지 결과 화면 표시
+    // 랭킹 보드 연동 (계속하기 A는 true, 나가기 Q는 false 반환)
+    bool showStageClearScreen(RankingManager &rankingManager) const;
 
-    // 점수 조회 게터
+    // 게임오버 화면 표시 (다시하기 A는 true, 나가기 Q는 false 반환)
+    bool showGameOverScreen(RankingManager &rankingManager) const;
+
+    // 최종 성공 스크린
+    // 랭킹 보드 연동 (계속하기 A는 true, 나가기 Q는 false 반환)
+    static bool showTotalClearScreen(RankingManager &rankingManager, const int maxLength, const int growth, const int poison, const int speed, const int gate);
+
+    // 스테이지 점수 조회
     // 최종 랭킹 기록용
     int getMaxLength() const { return scoreBoard.getMaxLength(); }
     int getGrowthCount() const { return scoreBoard.getGrowthCount(); }
@@ -66,28 +75,32 @@ public:
     int getGateCount() const { return scoreBoard.getGateCount(); }
 
 private:
-    // Game Loop 
-    void waitAndProcessInput(); // 입력 수집 & 틱 시간 대기
-    void update();              // 상태 업데이트
-    void render() const;        // 화면 렌더링
+    // 입력 수집 & 틱 시간 대기
+    void waitAndProcessInput();
+
+    // 뱀 이동, 아이템 수명, 게이트 업데이트, 장애물 상태, 미션 달성 여부 등을 업데이트함
+    void update();
+
+    // 갱신된 게임판(Map)과 성적 현황판(ScoreBoard)을 화면에 표시
+    void render() const;
 
 private:
-    int stageNum;
-    std::string mapFilePath;
+    int stageNum;            // 현재 기동 중인 스테이지 번호 (1~5)
+    std::string mapFilePath; // 실행할 맵 데이터 파일 경로
 
-    Map map;
-    Snake snake;
-    ScoreBoard scoreBoard;
-    Gate gate;
-    Item growthItem;
-    Item poisonItem;
-    Item speedItem;
-    BlockWall blockWall;
+    Map map;               // 게임 맵 및 렌더링을 담당하는 맵 객체
+    Snake snake;           // 뱀 위치와 이동 방향 제어 객체
+    ScoreBoard scoreBoard; // 실시간 성적 수집 및 미션 관리 객체
+    Gate gate;             // 게이트 텔레포트 관리 객체
+    Food growthItem;       // 성장 아이템 관리 객체
+    Poison poisonItem;     // 독약 아이템 관리 객체
+    SpeedItem speedItem;   // 스피드 아이템 및 가속 상태 관리 객체
+    BlockWall blockWall;   // 테트리스 모양 장애물 벽 관리 객체
 
-    bool isRunning;
-    bool gameOver;
-    bool stageClear;
-    bool userQuit;
+    bool isRunning;  // 게임 루프가 중단 없이 활성화되어 동작 중인지 여부
+    bool gameOver;   // 뱀이 벽이나 몸통과 충돌하여 게임오버 상태가 되었는지 여부
+    bool stageClear; // 모든 스테이지 목표 미션을 충족하여 클리어 상태가 되었는지 여부
+    bool userQuit;   // 사용자가 ESC 또는 Q 키를 눌러 스테이지를 포기했는지 여부
 };
 
 #endif

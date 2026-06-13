@@ -16,7 +16,4 @@ snake
 
 # 라이브러리 파일
 *.dll
-
-*.pptx
-
 .scoreboard/
