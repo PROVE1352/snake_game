@@ -99,7 +99,7 @@ void ScoreBoard::updateLength(const int len)
 // 획득 점수와 목표치를 실시간 대조하여 각 미션의 달성 여부(참/거짓)를 판정함
 void ScoreBoard::checkMissions()
 {
-    missionLength = (currentLength >= targetLength);
+    missionLength = (maxLength >= targetLength); // 최대길이로 사용(난이도 이슈)
     missionGrowth = (growthCount >= targetGrowth);
     missionPoison = (poisonCount >= targetPoison);
     missionSpeed = (speedCount >= targetSpeed);
@@ -122,7 +122,7 @@ void ScoreBoard::draw(const int offsetY, const int offsetX) const
     mvprintw(offsetY + 2, offsetX, "╠══════════════════════════╣");
     attroff(A_BOLD | COLOR_PAIR(COLOR_PAIR_TEXT_SPEED));
 
-    mvprintw(offsetY + 3, offsetX, "║  Length  : %2d / %-2d       ║", currentLength, maxLength);
+    mvprintw(offsetY + 3, offsetX, "║  Length  : %-2d / (Max:%2d) ║", currentLength, maxLength);
 
     mvprintw(offsetY + 4, offsetX, "║  ");
     attron(COLOR_PAIR(GROWTH_ITEM));
@@ -189,7 +189,7 @@ void ScoreBoard::draw(const int offsetY, const int offsetX) const
         mvprintw(mOffset + row, offsetX + 27, "║");
     };
 
-    printMissionRow(3, 0, "Length", currentLength, targetLength, missionLength);
+    printMissionRow(3, 0, "Length", maxLength, targetLength, missionLength);
     printMissionRow(4, GROWTH_ITEM, "Growth", growthCount, targetGrowth, missionGrowth);
     printMissionRow(5, POISON_ITEM, "Poison", poisonCount, targetPoison, missionPoison);
     printMissionRow(6, SPEED_ITEM, "Speed ", speedCount, targetSpeed, missionSpeed);
@@ -206,7 +206,7 @@ void ScoreBoard::draw(const int offsetY, const int offsetX) const
     mvprintw(hOffset + 4, offsetX, "║  Q 키  : 스테이지 종료   ║");
     mvprintw(hOffset + 5, offsetX, "║                          ║");
     mvprintw(hOffset + 6, offsetX, "║  ! 충돌 또는 길이 3 미만 ║");
-    mvprintw(hOffset + 7, offsetX, "║    시 게임오버가 됩니다  ║");
+    mvprintw(hOffset + 7, offsetX, "║    게임오버 처리됨       ║");
     mvprintw(hOffset + 8, offsetX, "╚══════════════════════════╝");
     attroff(A_DIM);
 }
