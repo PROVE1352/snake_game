@@ -138,7 +138,7 @@ int main()
         {
             // 랭킹 등록 및 게임 클리어 보드 출력
             // A 누르면 다시 시작(currentStageIdx = 0 이 되어 루프 재진입 가능)
-            bool restart = GameController::showTotalClearScreen(rankingManager, finalMax, finalGrowth, finalPoison, finalSpeed, finalGate);
+            const bool restart = GameController::showTotalClearScreen(rankingManager, finalMax, finalGrowth, finalPoison, finalSpeed, finalGate);
             if (restart)
             {
                 // 1단계부터 다시 게임 시작

@@ -68,7 +68,7 @@ void RankingManager::loadFromFile(const std::string &filepath)
 }
 
 // 현재 랭킹 기록 전체를 파일에 '|' 구분 형식으로 저장
-void RankingManager::saveToFile(const std::string &filepath)
+void RankingManager::saveToFile(const std::string &filepath) const
 {
     std::ofstream fout(filepath);
     if (!fout.is_open())

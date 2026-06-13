@@ -43,14 +43,14 @@ public:
     GameResult run();
 
     // 인트로 화면 표시 (게임 시작 시 true, 종료 선택 시 false 반환)
-    static bool showIntroScreen(RankingManager &rankingManager);
+    static bool showIntroScreen(const RankingManager &rankingManager);
 
     // 도움말/조작법 화면 표시
     static void showHelpScreen();
 
     // 랭킹 보드 화면 표시
     // 계속 진행 A 입력 시 true, 메인으로 복귀 Q 입력 시 false
-    static bool showRankingBoardScreen(RankingManager &rankingManager, const int initialStage, const std::string &bottomMessage, const bool allowSwitch);
+    static bool showRankingBoardScreen(const RankingManager &rankingManager, const int initialStage, const std::string &bottomMessage, const bool allowSwitch);
 
     // 랭킹 테이블 그리기 헬퍼 함수
     static void drawRankingTable(const std::vector<RankingRecord> &ranks, const int stageFilter, const std::string &bottomMessage);

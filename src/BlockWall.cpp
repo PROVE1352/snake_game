@@ -135,7 +135,7 @@ bool BlockWall::trySpawnWarn(Map &map, const Snake & /*snake*/)
 
 // 예고를 실제 벽으로 굳히기
 
-void BlockWall::hardenToWall(Map &map)
+void BlockWall::hardenToWall(Map &map) const
 {
     // 아직 BLOCK_WARN 인 칸만 굳힘
     // 예고 동안 뱀이 지나가 덮은 칸은 BLOCK_WARN 이 아니므로 자동 스킵
@@ -150,7 +150,7 @@ void BlockWall::hardenToWall(Map &map)
 
 // 블록 칸 제거
 
-void BlockWall::clearCells(Map &map, const int onlyIfCell)
+void BlockWall::clearCells(Map &map, const int onlyIfCell) const
 {
     // 지정한 셀 값인 칸만 EMPTY로 뱀/아이템이 덮은 칸은 건드리지 않음
     for (int i = 0; i < cellCount; i++)

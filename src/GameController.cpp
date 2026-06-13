@@ -104,7 +104,7 @@ GameResult GameController::run()
     return GameResult::STAGE_CLEAR; // 스테이지 완료 성공
 }
 
-// 틱 지연 시간(기본 0.2초 / 가속 0.1초) 동안 대기하며 키 입력을 수집함
+// 틱 지연 시간 동안 대기하며 키 입력을 수집함
 void GameController::waitAndProcessInput()
 {
     // 스피드 아이템 버프 활성화 시 대기 틱 주기를 절반으로 줄여 2배 빠르게 기동
@@ -286,7 +286,7 @@ void GameController::render() const
 }
 
 // 게임 타이틀과 메인 메뉴 인트로 스크린을 띄움 (게임 구동 시 true, 종료 선택 시 false 반환)
-bool GameController::showIntroScreen(RankingManager &rankingManager)
+bool GameController::showIntroScreen(const RankingManager &rankingManager)
 {
     nodelay(stdscr, FALSE); // 메뉴 입력 조작을 위해 키를 블로킹 모드로 수집
     bool needRedraw = true;
@@ -471,7 +471,7 @@ void GameController::showHelpScreen()
 }
 
 // 랭킹 보드 스크린 조작 루프 (allowSwitch가 참이면 좌우 방향키로 스테이지별 필터 전환 가능)
-bool GameController::showRankingBoardScreen(RankingManager &rankingManager, const int initialStage, const std::string &bottomMessage, const bool allowSwitch)
+bool GameController::showRankingBoardScreen(const RankingManager &rankingManager, const int initialStage, const std::string &bottomMessage, const bool allowSwitch)
 {
     nodelay(stdscr, FALSE);
     int stageFilter = initialStage;

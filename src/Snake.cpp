@@ -261,7 +261,7 @@ int Snake::move(Map &map, Gate *const gate)
     }
 
     // 이동 전의 target 셀 값을 반환하기 위해 보관
-    int result = target;
+    const int result = target;
 
     // 아이템 종류에 따라 꼬리 처리 분기 설정
     if (target == GROWTH_ITEM)

@@ -34,7 +34,7 @@ public:
     void loadFromFile(const std::string &filepath = "scoreboard/rankings.txt");
 
     // 파일에 랭킹 저장
-    void saveToFile(const std::string &filepath = "scoreboard/rankings.txt");
+    void saveToFile(const std::string &filepath = "scoreboard/rankings.txt") const;
 
     // 새로운 랭킹 레코드 추가
     // 추가 시 현재 시간 구해서 timestamp 자동 생성

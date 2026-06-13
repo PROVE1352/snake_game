@@ -34,10 +34,10 @@ private:
     bool trySpawnWarn(Map &map, const Snake &snake);
 
     // 예고 칸(BLOCK_WARN)을 실제 벽(BLOCK_WALL)으로 굳힘
-    void hardenToWall(Map &map);
+    void hardenToWall(Map &map) const;
 
     // 블록 칸을 맵에서 지움 (지정한 셀 값인 칸만 EMPTY 로)
-    void clearCells(Map &map, int onlyIfCell);
+    void clearCells(Map &map, const int onlyIfCell) const;
 };
 
 #endif
