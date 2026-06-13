@@ -122,7 +122,7 @@ void ScoreBoard::draw(const int offsetY, const int offsetX) const
     mvprintw(offsetY + 2, offsetX, "╠══════════════════════════╣");
     attroff(A_BOLD | COLOR_PAIR(COLOR_PAIR_TEXT_SPEED));
 
-    mvprintw(offsetY + 3, offsetX, "║  Length  : %-2d / (Max:%2d) ║", currentLength, maxLength);
+    mvprintw(offsetY + 3, offsetX, "║     Length : %-2d (Max:%2d) ║", currentLength, maxLength);
 
     mvprintw(offsetY + 4, offsetX, "║  ");
     attron(COLOR_PAIR(GROWTH_ITEM));
@@ -171,7 +171,7 @@ void ScoreBoard::draw(const int offsetY, const int offsetX) const
         }
         else
         {
-            mvprintw(mOffset + row, offsetX + 3, "Length : %2d / %-2d   ", current, target);
+            mvprintw(mOffset + row, offsetX + 3, "MaxLength : %2d / %-2d", current, target);
         }
 
         if (complete)
@@ -189,7 +189,7 @@ void ScoreBoard::draw(const int offsetY, const int offsetX) const
         mvprintw(mOffset + row, offsetX + 27, "║");
     };
 
-    printMissionRow(3, 0, "Length", maxLength, targetLength, missionLength);
+    printMissionRow(3, 0, "MaxLength", maxLength, targetLength, missionLength);
     printMissionRow(4, GROWTH_ITEM, "Growth", growthCount, targetGrowth, missionGrowth);
     printMissionRow(5, POISON_ITEM, "Poison", poisonCount, targetPoison, missionPoison);
     printMissionRow(6, SPEED_ITEM, "Speed ", speedCount, targetSpeed, missionSpeed);
